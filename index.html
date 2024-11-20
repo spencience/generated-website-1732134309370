@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Moon Phase Simulator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+<header class="p-4 bg-gray-800">
+<h1 class="text-3xl font-bold text-center">Moon Phase Simulator</h1>
+</header>
+<main class="container mx-auto p-4">
+<div class="flex flex-col items-center gap-8">
+<div id="moon-container" class="relative w-64 h-64">
+<svg id="moon" class="w-full h-full" viewBox="0 0 100 100">
+<circle cx="50" cy="50" r="45" fill="#FFFFFF" />
+<path id="shadow" d="M50,5 A45,45 0 1,1 50,95 A45,45 0 1,1 50,5" fill="#1F2937" />
+</svg>
+</div>
+<div class="flex flex-col gap-4 w-full max-w-md">
+<input type="range" id="phase-slider" min="0" max="100" value="0" class="w-full">
+<div id="phase-name" class="text-xl text-center">New Moon</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
+<div class="bg-gray-800 p-4 rounded">
+<h2 class="text-xl mb-2">Current Phase Details</h2>
+<p id="phase-details" class="text-gray-300"></p>
+</div>
+<div class="bg-gray-800 p-4 rounded">
+<h2 class="text-xl mb-2">Next Phase</h2>
+<p id="next-phase" class="text-gray-300"></p>
+</div>
+</div>
+</div>
+</main>
+<script>
+        const slider = document.getElementById('phase-slider');
+        const shadow = document.getElementById('shadow');
+        const phaseName = document.getElementById('phase-name');
+        const phaseDetails = document.getElementById('phase-details');
+        const nextPhase = document.getElementById('next-phase');
+
+        const phases = [
+            { name: 'New Moon', start: 0, details: 'Moon is between Earth and Sun' },
+            { name: 'Waxing Crescent', start: 12.5, details: 'Right side begins to show' },
+            { name: 'First Quarter', start: 25, details: 'Right half illuminated' },
+            { name: 'Waxing Gibbous', start: 37.5, details: 'More than half illuminated' },
+            { name: 'Full Moon', start: 50, details: 'Fully illuminated' },
+            { name: 'Waning Gibbous', start: 62.5, details: 'Left side begins to darken' },
+            { name: 'Last Quarter', start: 75, details: 'Left half illuminated' },
+            { name: 'Waning Crescent', start: 87.5, details: 'Small crescent remains' }
+        ];
+
+        function updateMoon(value) {
+            const angle = (value / 100) * 360;
+            const radians = (angle - 90) * Math.PI / 180;
+            const x = 50 + 45 * Math.cos(radians);
+            const y = 50 + 45 * Math.sin(radians);
+            const largeArc = angle > 180 ? 1 : 0;
+            
+            shadow.setAttribute('d', `M50,5 A45,45 0 ${largeArc},1 ${x},${y} A45,45 0 ${largeArc},1 50,5`);
+
+            const currentPhase = phases.reduce((prev, curr) => 
+                value >= curr.start ? curr : prev
+            );
+
+            const nextPhaseIndex = (phases.indexOf(currentPhase) + 1) % phases.length;
+
+            phaseName.textContent = currentPhase.name;
+            phaseDetails.textContent = currentPhase.details;
+            nextPhase.textContent = `${phases[nextPhaseIndex].name} (in ${Math.round(phases[nextPhaseIndex].start - value)}% of cycle)`;
+        }
+
+        slider.addEventListener('input', (e) => {
+            updateMoon(e.target.value);
+        });
+
+        updateMoon(0);
+
+        document.addEventListener('keydown', (e) => {
+            const step = 1;
+            if (e.key === 'ArrowRight') {
+                slider.value = Math.min(100, parseInt(slider.value) + step);
+                updateMoon(slider.value);
+            } else if (e.key === 'ArrowLeft') {
+                slider.value = Math.max(0, parseInt(slider.value) - step);
+                updateMoon(slider.value);
+            }
+        });
+
+        let autoPlay = false;
+        let animationFrame;
+
+        document.addEventListener('keypress', (e) => {
+            if (e.key === ' ') {
+                autoPlay = !autoPlay;
+                if (autoPlay) {
+                    const animate = () => {
+                        slider.value = (parseFloat(slider.value) + 0.5) % 100;
+                        updateMoon(slider.value);
+                        animationFrame = requestAnimationFrame(animate);
+                    };
+                    animate();
+                } else {
+                    cancelAnimationFrame(animationFrame);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
